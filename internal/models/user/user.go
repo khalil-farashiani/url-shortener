@@ -10,7 +10,7 @@ import (
 
 type User struct {
 	gorm.Model
-	Username string    `json:"user_name"`
+	Username string    `json:"user_name" gorm:"unique"`
 	Email    *string   `json:"email"`
 	Password string    `json:"password"`
 	Avatar   *string   `json:"avatar"`
@@ -23,8 +23,8 @@ func (u *User) Validate() error {
 	if username == "" {
 		return errors.New("username should not be empty")
 	}
-	if password == "" {
-		return errors.New("password should not be empty")
+	if len(password) < 8 {
+		return errors.New("password character should be grater than or equal 8")
 	}
 	return nil
 }
