@@ -26,6 +26,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
+	app.Static("/assets", "assets")
+
 	routes()
 
 	app.Logger.Fatal(app.Start(portNumber))
