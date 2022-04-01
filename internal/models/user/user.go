@@ -10,11 +10,12 @@ import (
 
 type User struct {
 	gorm.Model
-	Username string    `json:"user_name" gorm:"unique"`
-	Email    *string   `json:"email"`
-	Password string    `json:"password"`
-	Avatar   *string   `json:"avatar"`
-	Url      []url.Url `gorm:"foreignKey:UrlId"`
+	Username    string    `json:"user_name" gorm:"unique"`
+	Email       *string   `json:"email"`
+	Password    string    `json:"password"`
+	Avatar      *string   `json:"avatar"`
+	Phonenumber *string   `json:"phone_number"`
+	Url         []url.Url `gorm:"foreignKey:UrlId"`
 }
 
 func (u *User) Validate() error {
