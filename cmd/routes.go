@@ -13,9 +13,9 @@ func routes() {
 	app.GET("/urls/?created_at", handlers.SearchUrl)
 	//user routes
 	app.POST("/users/", handlers.CreateUser)
-	app.GET("/users/:url_id", handlers.GetUser)
+	app.GET("/users/:user_id", handlers.GetUser)
 	app.PUT("/users", handlers.UpdateUser)
 	app.PATCH("/users", handlers.UpdateUser)
-	app.DELETE("/users", handlers.DeleteUser)
+	app.DELETE("/users/:user_id", handlers.DeleteUser)
 	app.GET("/users/?created_at", handlers.SearchUser)
 }
