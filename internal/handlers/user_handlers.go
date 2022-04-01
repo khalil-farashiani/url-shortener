@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
 	"github.com/khalil-farashiani/url-shortener/internal/models/user"
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
@@ -16,6 +18,22 @@ import (
 const (
 	userAssets = `assets/user/`
 )
+
+func createToken(userId uint64) (string, error) {
+	var err error
+	//Creating Access Token
+	accessSecret := utils.GetEnv("ACCESS_SECRET", "foo")
+	atClaims := jwt.MapClaims{}
+	atClaims["authorized"] = true
+	atClaims["user_id"] = userId
+	atClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+	token, err := at.SignedString([]byte(accessSecret))
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
 
 func getUserId(userIdParam string) (int64, *utils.RestErr) {
 	userId, userErr := strconv.ParseInt(userIdParam, 10, 64)
@@ -93,8 +111,8 @@ func GetUser(c echo.Context) error {
 		return c.JSON(getErr.Status, getErr)
 	}
 	user := &user.User{}
-	err := drivers.DB.First(&user, userId).Error
-	if err != nil {
+
+	if err := drivers.DB.First(&user, userId).Error; err != nil {
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
 	}
 
@@ -109,8 +127,8 @@ func DeleteUser(c echo.Context) error {
 	}
 
 	user := &user.User{}
-	err := drivers.DB.Delete(&user, userId).Error
-	if err != nil {
+
+	if err := drivers.DB.Delete(&user, userId).Error; err != nil {
 		fmt.Println(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
 	}
@@ -118,10 +136,31 @@ func DeleteUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, "user deleted")
 }
 
-func SearchUser(c echo.Context) error {
+func UpdateUser(c echo.Context) error {
 	return c.JSON(http.StatusNotImplemented, "implement me!")
 }
 
-func UpdateUser(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!")
+func Login(c echo.Context) error {
+	username := c.FormValue("username")
+	password := c.FormValue("password")
+
+	user := &user.User{}
+	if err := drivers.DB.First(&user, "username = ?", username).Error; err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("Please provide valid login details"))
+	}
+	if utils.GetMD5(password) != user.Password {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("Please provide valid login details"))
+	}
+
+	token, err := createToken(user.ID)
+	if err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, err.Error())
+	}
+
+	res := map[string]string{
+		"token": token,
+	}
+
+	c.JSON(http.StatusOK, res)
+	return nil
 }
