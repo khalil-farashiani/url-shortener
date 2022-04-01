@@ -28,6 +28,7 @@ func run() error {
 	}
 
 	app.Static("/assets", "assets")
+	// app.Use(middleware.JWT([]byte("secret")))
 
 	routes()
 

@@ -16,6 +16,6 @@ func routes() {
 	app.GET("/users/:user_id", handlers.GetUser)
 	app.PUT("/users", handlers.UpdateUser)
 	app.PATCH("/users", handlers.UpdateUser)
+	app.POST("/users/login/", handlers.Login)
 	app.DELETE("/users/:user_id", handlers.DeleteUser)
-	app.GET("/users/?created_at", handlers.SearchUser)
 }
