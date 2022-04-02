@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
 	"github.com/khalil-farashiani/url-shortener/internal/models/user"
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
@@ -18,22 +16,6 @@ import (
 const (
 	userAssets = `assets/user/`
 )
-
-func createToken(userId uint64) (string, error) {
-	var err error
-	//Creating Access Token
-	accessSecret := utils.GetEnv("ACCESS_SECRET", "foo")
-	atClaims := jwt.MapClaims{}
-	atClaims["authorized"] = true
-	atClaims["user_id"] = userId
-	atClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
-	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	token, err := at.SignedString([]byte(accessSecret))
-	if err != nil {
-		return "", err
-	}
-	return token, nil
-}
 
 func getUserId(userIdParam string) (int64, *utils.RestErr) {
 	userId, userErr := strconv.ParseInt(userIdParam, 10, 64)
@@ -152,15 +134,20 @@ func Login(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("Please provide valid login details"))
 	}
 
-	token, err := createToken(user.ID)
+	ts, err := createToken(user.ID)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err.Error())
 	}
-
-	res := map[string]string{
-		"token": token,
+	saveErr := createAuth(user.ID, ts)
+	if saveErr != nil {
+		c.JSON(http.StatusUnprocessableEntity, saveErr.Error())
 	}
 
-	c.JSON(http.StatusOK, res)
+	tokens := map[string]string{
+		"access_token":  ts.AccessToken,
+		"refresh_token": ts.RefreshToken,
+	}
+
+	c.JSON(http.StatusOK, tokens)
 	return nil
 }
