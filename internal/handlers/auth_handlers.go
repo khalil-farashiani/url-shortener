@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
 	"github.com/khalil-farashiani/url-shortener/internal/models/auth"
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
@@ -18,7 +18,7 @@ import (
 func createToken(userId uint64) (*auth.TokenDetails, error) {
 
 	td := &auth.TokenDetails{}
-	td.AtExpires = time.Now().Add(time.Minute * 5).Unix()
+	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
 	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
 	td.RefreshUuid = uuid.NewV4().String()
@@ -71,6 +71,7 @@ func extractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	//normally Authorization the_token_xxx
 	strArr := strings.Split(bearToken, " ")
+	fmt.Println(len(strArr))
 	if len(strArr) == 2 {
 		return strArr[1]
 	}
@@ -80,12 +81,14 @@ func extractToken(r *http.Request) string {
 func verifyToken(r *http.Request) (*jwt.Token, error) {
 	tokenString := extractToken(r)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		//Make sure that the token method conform to "SigningMethodHMAC"
+
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(os.Getenv("ACCESS_SECRET")), nil
 	})
+	fmt.Println(tokenString)
+	fmt.Println(os.Getenv("ACCESS_SECRET"))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +106,7 @@ func tokenValid(r *http.Request) error {
 	return nil
 }
 
-func ExtractTokenMetadata(r *http.Request) (*auth.AccessDetails, error) {
+func extractTokenMetadata(r *http.Request) (*auth.AccessDetails, error) {
 	token, err := verifyToken(r)
 	if err != nil {
 		return nil, err

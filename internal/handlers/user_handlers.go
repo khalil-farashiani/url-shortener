@@ -133,7 +133,7 @@ func Login(c echo.Context) error {
 	if utils.GetMD5(password) != user.Password {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("Please provide valid login details"))
 	}
-
+	fmt.Println(user.ID)
 	ts, err := createToken(user.ID)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err.Error())
