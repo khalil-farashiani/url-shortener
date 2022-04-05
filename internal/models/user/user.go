@@ -4,19 +4,17 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/khalil-farashiani/url-shortener/internal/models/url"
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
-	ID          uint64    `json:"id" gorm:"primaryKey"`
-	Username    string    `json:"user_name" gorm:"unique"`
-	Email       *string   `json:"email"`
-	Password    string    `json:"password"`
-	Avatar      *string   `json:"avatar"`
-	Phonenumber *string   `json:"phone_number"`
-	Url         []url.Url `gorm:"foreignKey:UrlId"`
+	ID          uint64  `json:"id" gorm:"primaryKey"`
+	Username    string  `json:"user_name" gorm:"unique"`
+	Email       *string `json:"email"`
+	Password    string  `json:"password"`
+	Avatar      *string `json:"avatar"`
+	Phonenumber *string `json:"phone_number"`
 }
 
 func (u *User) Validate() error {
