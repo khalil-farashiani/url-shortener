@@ -27,8 +27,8 @@ func ConnectSQL() error {
 		return err
 	}
 
-	DB.AutoMigrate(&user.User{})
 	DB.AutoMigrate(&url.Url{})
+	DB.AutoMigrate(&user.User{})
 
 	return nil
 }

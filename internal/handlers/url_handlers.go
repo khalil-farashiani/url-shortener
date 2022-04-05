@@ -30,24 +30,27 @@ func createShortLink(length int) string {
 
 func CreateUrl(c echo.Context) error {
 	url := &url.Url{}
-	user := &user.User{}
 	source := c.FormValue("source")
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
-		fmt.Println(err)
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
-	fmt.Println(user.ID)
 	if err != nil {
-		fmt.Println(err)
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
-	user.ID = userId
 	url.Source = source
 	url.ShortUrl = domain + createShortLink(7)
-	updateErr := drivers.DB.Model(&user).Where("id=?", userId).Association("Url").Append(&url)
+	user := &user.User{}
+
+	if err := drivers.DB.First(&user, userId).Error; err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
+	}
+	url.User = *user
+	url.UserID = userId
+
+	updateErr := drivers.DB.Create(url).Error
 	if updateErr != nil {
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("have an issue in create shortlink"))
 	}
@@ -67,5 +70,9 @@ func SearchUrl(c echo.Context) error {
 }
 
 func UpdateUrl(c echo.Context) error {
+	return c.JSON(http.StatusNotImplemented, "implement me!")
+}
+
+func MyUrls(c echo.Context) error {
 	return c.JSON(http.StatusNotImplemented, "implement me!")
 }

@@ -71,7 +71,6 @@ func extractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	//normally Authorization the_token_xxx
 	strArr := strings.Split(bearToken, " ")
-	fmt.Println(len(strArr))
 	if len(strArr) == 2 {
 		return strArr[1]
 	}
@@ -87,8 +86,6 @@ func verifyToken(r *http.Request) (*jwt.Token, error) {
 		}
 		return []byte(os.Getenv("ACCESS_SECRET")), nil
 	})
-	fmt.Println(tokenString)
-	fmt.Println(os.Getenv("ACCESS_SECRET"))
 	if err != nil {
 		return nil, err
 	}
