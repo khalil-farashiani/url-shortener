@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
 	"github.com/khalil-farashiani/url-shortener/internal/models/url"
@@ -11,8 +13,19 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const (
+	domain = "127.0.0.1:8080/"
+)
+
 func Ping(c echo.Context) error {
 	return c.JSON(http.StatusOK, "pong")
+}
+
+func createShortLink(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, length)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)[:length]
 }
 
 func CreateUrl(c echo.Context) error {
@@ -22,21 +35,21 @@ func CreateUrl(c echo.Context) error {
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
 		fmt.Println(err)
-		return c.JSON(http.StatusUnauthorized, "unauthorized")
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
 	fmt.Println(user.ID)
 	if err != nil {
 		fmt.Println(err)
-		return c.JSON(http.StatusUnauthorized, "unauthorized")
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 	user.ID = userId
 	url.Source = source
-
-	updateErr := drivers.DB.Model(&user).Where("id=?", userId).Association("url").Append(&url).Error
+	url.ShortUrl = domain + createShortLink(7)
+	updateErr := drivers.DB.Model(&user).Where("id=?", userId).Association("Url").Append(&url)
 	if updateErr != nil {
-		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("have an issue in create shortlink"))
 	}
 	return c.JSON(http.StatusCreated, url)
 }
