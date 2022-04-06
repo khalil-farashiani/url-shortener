@@ -6,11 +6,9 @@ func routes() {
 	app.GET("/ping", handlers.Ping)
 	//url routes
 	app.POST("/urls/", handlers.CreateUrl)
-	app.GET("/urls/:url_id", handlers.GetUrl)
-	app.PUT("/urls", handlers.UpdateUrl)
-	app.PATCH("/urls", handlers.UpdateUrl)
+	app.GET("/:url", handlers.GetUrl)
 	app.DELETE("/urls", handlers.DeleteUrl)
-	app.GET("/urls/?created_at", handlers.SearchUrl)
+	app.GET("/users/my-links", handlers.MyUrls)
 	//user routes
 	app.POST("/users/", handlers.CreateUser)
 	app.GET("/users/:user_id", handlers.GetUser)
