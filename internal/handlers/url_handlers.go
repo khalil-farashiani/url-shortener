@@ -67,9 +67,37 @@ func GetUrl(c echo.Context) error {
 }
 
 func DeleteUrl(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!")
+	urlParam := c.Param("url")
+	tokenAuth, err := extractTokenMetadata(c.Request())
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+
+	userId, err := FetchAuth(tokenAuth)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+
+	if err := drivers.DB.Where(map[string]interface{}{"short_url": domain + urlParam, "user_id": userId}).Delete(&url.Url{}).Error; err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("url not found"))
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }
 
 func MyUrls(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!")
+	urls := []url.Url{}
+	tokenAuth, err := extractTokenMetadata(c.Request())
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+
+	userId, err := FetchAuth(tokenAuth)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+
+	if err := drivers.DB.Where("user_id = ?", userId).Find(&urls).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have issue to get the urls"))
+	}
+	return c.JSON(http.StatusOK, urls)
 }

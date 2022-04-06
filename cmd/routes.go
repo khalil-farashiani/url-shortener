@@ -7,7 +7,7 @@ func routes() {
 	//url routes
 	app.POST("/urls/", handlers.CreateUrl)
 	app.GET("/:url", handlers.GetUrl)
-	app.DELETE("/urls", handlers.DeleteUrl)
+	app.DELETE("/:url", handlers.DeleteUrl)
 	app.GET("/users/my-links", handlers.MyUrls)
 	//user routes
 	app.POST("/users/", handlers.CreateUser)
