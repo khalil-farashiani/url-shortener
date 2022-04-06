@@ -45,31 +45,28 @@ func CreateUrl(c echo.Context) error {
 	user := &user.User{}
 
 	if err := drivers.DB.First(&user, userId).Error; err != nil {
-		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 	}
 	url.User = *user
 	url.UserID = userId
 
 	updateErr := drivers.DB.Create(url).Error
 	if updateErr != nil {
-		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("have an issue in create shortlink"))
+		return c.JSON(http.StatusNotFound, utils.NewInternalServerError("have an issue in create shortlink"))
 	}
 	return c.JSON(http.StatusCreated, url)
 }
 
 func GetUrl(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!")
+	url := &url.Url{}
+	urlParam := c.Param("url")
+	if err := drivers.DB.First(&url, "short_url = ?", domain+urlParam).Error; err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("url not found"))
+	}
+	return c.JSON(http.StatusOK, map[string]string{"result": url.Source})
 }
 
 func DeleteUrl(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!")
-}
-
-func SearchUrl(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!")
-}
-
-func UpdateUrl(c echo.Context) error {
 	return c.JSON(http.StatusNotImplemented, "implement me!")
 }
 
