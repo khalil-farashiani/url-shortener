@@ -18,5 +18,4 @@ type Email struct {
 	Title   string `json:"title"`
 	Message string `json:"message"`
 	Email   string `json:"email"`
-	Token   string `json:"token"`
 }
