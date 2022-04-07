@@ -150,3 +150,12 @@ func Login(c echo.Context) error {
 	c.JSON(http.StatusOK, tokens)
 	return nil
 }
+
+func ResetPassword(c echo.Context) error {
+	u := &user.User{}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+
+	return nil
+}
