@@ -12,3 +12,5 @@ type Url struct {
 	UserID   uint64    `json:"user_id"`
 	User     user.User `jaon:"user"`
 }
+
+type Urls []Url

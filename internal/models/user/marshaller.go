@@ -11,8 +11,8 @@ type MarshallUser struct {
 	Avatar   *string `json:"avatar"`
 }
 
-func (user User) Marshall() MarshallUser {
-	userJson, _ := json.Marshal(user)
+func (u User) Marshall() MarshallUser {
+	userJson, _ := json.Marshal(u)
 	result := MarshallUser{}
 	json.Unmarshal(userJson, &result)
 	return result

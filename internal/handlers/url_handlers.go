@@ -54,7 +54,7 @@ func CreateUrl(c echo.Context) error {
 	if updateErr != nil {
 		return c.JSON(http.StatusNotFound, utils.NewInternalServerError("have an issue in create shortlink"))
 	}
-	return c.JSON(http.StatusCreated, url)
+	return c.JSON(http.StatusCreated, url.Marshall())
 }
 
 func GetUrl(c echo.Context) error {
@@ -85,7 +85,7 @@ func DeleteUrl(c echo.Context) error {
 }
 
 func MyUrls(c echo.Context) error {
-	urls := []url.Url{}
+	urls := &url.Urls{}
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
@@ -96,8 +96,8 @@ func MyUrls(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
-	if err := drivers.DB.Where("user_id = ?", userId).Find(&urls).Error; err != nil {
-		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have issue to get the urls"))
+	if err := drivers.DB.Where(&url.Url{UserID: uint64(userId)}).Find(urls).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to return the urls"))
 	}
-	return c.JSON(http.StatusOK, urls)
+	return c.JSON(http.StatusOK, urls.Marshall())
 }
