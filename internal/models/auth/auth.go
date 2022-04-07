@@ -13,3 +13,10 @@ type AccessDetails struct {
 	AccessUuid string
 	UserId     uint64
 }
+
+type Email struct {
+	Title   string `json:"title"`
+	Message string `json:"message"`
+	Email   string `json:"email"`
+	Token   string `json:"token"`
+}
