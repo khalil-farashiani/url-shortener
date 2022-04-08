@@ -15,7 +15,6 @@ type AccessDetails struct {
 }
 
 type Email struct {
-	Title   string `json:"title"`
-	Message string `json:"message"`
-	Email   string `json:"email"`
+	Message []byte   `json:"message"`
+	To      []string `json:"email"`
 }
