@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
+	"github.com/khalil-farashiani/url-shortener/internal/models/auth"
 	"github.com/khalil-farashiani/url-shortener/internal/models/user"
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
 	"github.com/labstack/echo/v4"
@@ -15,8 +17,23 @@ import (
 
 const (
 	userAssets = `assets/user/`
+	message    = `Hi you get this email for reset your password
+please click on the follwing link to reset your password 
+if you find this email not for you igonore it
+`
 )
 
+var (
+	from     = utils.GetEnv("FROM", "example@gmail.com")
+	password = utils.GetEnv("EMAIL_PASS", "12345678")
+
+	smtpHost = "smtp.gmail.com"
+	smtpPort = "587"
+)
+
+func SendEmail(e auth.Email) *utils.RestErr {
+	return nil
+}
 func getUserId(userIdParam string) (int64, *utils.RestErr) {
 	userId, userErr := strconv.ParseInt(userIdParam, 10, 64)
 	if userErr != nil {
@@ -152,10 +169,37 @@ func Login(c echo.Context) error {
 }
 
 func ResetPassword(c echo.Context) error {
+	duration := time.Now().Add(time.Minute * 15).Unix()
+	linkEx := time.Unix(duration, 0)
+	now := time.Now()
+
 	u := &user.User{}
 	if err := c.Bind(u); err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid json body"))
+	}
+	if u.Email == nil {
+		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("email is requierd field"))
 	}
 
-	return nil
+	if err := drivers.DB.First(&u).Error; err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
+	}
+	uniqueStr := CreateUniqueLink(20)
+	link := domain + uniqueStr
+
+	setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
+	if setLinkErr != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send email please try later"))
+	}
+
+	e := auth.Email{
+		To:      []string{*u.Email},
+		Message: []byte(message + link),
+	}
+	return c.JSON(http.StatusOK, "ok")
+
+	if err := SendEmail(e); err != nil {
+		return c.JSON(err.Status, err)
+	}
+	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 }
