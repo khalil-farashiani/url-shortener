@@ -21,7 +21,7 @@ func Ping(c echo.Context) error {
 	return c.JSON(http.StatusOK, "pong")
 }
 
-func createShortLink(length int) string {
+func CreateUniqueLink(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]byte, length)
 	rand.Read(b)
@@ -41,7 +41,7 @@ func CreateUrl(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 	url.Source = source
-	url.ShortUrl = domain + createShortLink(7)
+	url.ShortUrl = domain + CreateUniqueLink(7)
 	user := &user.User{}
 
 	if err := drivers.DB.First(&user, userId).Error; err != nil {
