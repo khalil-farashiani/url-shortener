@@ -101,7 +101,7 @@ func CreateUser(c echo.Context) error {
 	user.Password = utils.GetMD5(password)
 	user.Email = &email
 
-	if err := user.Validate(); err != nil {
+	if err := user.Validate("save"); err != nil {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
 	}
 	err = drivers.DB.Create(user).Error
@@ -145,6 +145,16 @@ func DeleteUser(c echo.Context) error {
 
 // TODO implement this func
 func UpdateUser(c echo.Context) error {
+	u := user.User{}
+	if err := c.Bind(&u); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid json body"))
+	}
+	if err := u.Validate("update"); err != nil {
+		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
+	}
+	if err := drivers.DB.Model(u).Updates(user.User{Password: u.Password, Phonenumber: u.Phonenumber, Username: u.Username}).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
+	}
 	return c.JSON(http.StatusNotImplemented, "implement me!")
 }
 
