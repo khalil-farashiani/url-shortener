@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strconv"
 	"time"
@@ -29,10 +30,17 @@ var (
 
 	smtpHost = "smtp.gmail.com"
 	smtpPort = "587"
+	restErr  = make(chan error, 0)
 )
 
-func SendEmail(e auth.Email) *utils.RestErr {
-	return nil
+func SendEmail(e auth.Email) {
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, e.To, e.Message)
+	if err != nil {
+		fmt.Println(err.Error())
+		restErr <- err
+	}
+	restErr <- nil
 }
 func getUserId(userIdParam string) (int64, *utils.RestErr) {
 	userId, userErr := strconv.ParseInt(userIdParam, 10, 64)
@@ -180,8 +188,7 @@ func ResetPassword(c echo.Context) error {
 	if u.Email == nil {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("email is requierd field"))
 	}
-
-	if err := drivers.DB.First(&u).Error; err != nil {
+	if err := drivers.DB.Where("email = ?", *u.Email).First(&u).Error; err != nil {
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 	}
 	uniqueStr := CreateUniqueLink(20)
@@ -191,15 +198,14 @@ func ResetPassword(c echo.Context) error {
 	if setLinkErr != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send email please try later"))
 	}
-
 	e := auth.Email{
 		To:      []string{*u.Email},
 		Message: []byte(message + link),
 	}
-	return c.JSON(http.StatusOK, "ok")
-
-	if err := SendEmail(e); err != nil {
-		return c.JSON(err.Status, err)
+	go SendEmail(e)
+	err := <-restErr
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send email please try latar"))
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 }
