@@ -176,7 +176,7 @@ func Login(c echo.Context) error {
 	return nil
 }
 
-func ResetPassword(c echo.Context) error {
+func ForgetPassword(c echo.Context) error {
 	duration := time.Now().Add(time.Minute * 15).Unix()
 	linkEx := time.Unix(duration, 0)
 	now := time.Now()
@@ -208,4 +208,8 @@ func ResetPassword(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send email please try latar"))
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
+}
+
+func ResetPassword(c echo.Context) error {
+	return c.JSON(http.StatusNotImplemented, "implement me!!")
 }
