@@ -17,14 +17,29 @@ type User struct {
 	Phonenumber *string `json:"phone_number"`
 }
 
-func (u *User) Validate() error {
-	username := strings.TrimSpace(u.Username)
-	password := strings.TrimSpace(u.Password)
-	if username == "" {
-		return errors.New("username should not be empty")
+func (u *User) Validate(action string) error {
+	switch action {
+	case "save":
+		username := strings.TrimSpace(u.Username)
+		password := strings.TrimSpace(u.Password)
+		if username == "" {
+			return errors.New("username should not be empty")
+		}
+		if len(password) < 8 {
+			return errors.New("password character should be grater than or equal 8")
+		}
+		return nil
+	case "update":
+		username := strings.TrimSpace(u.Username)
+		password := strings.TrimSpace(u.Password)
+		if username == "" {
+			return errors.New("username should not be empty")
+		}
+		if len(password) < 8 {
+			return errors.New("password character should be grater than or equal 8")
+		}
+		return nil
+	default:
+		return errors.New("action not in update or save")
 	}
-	if len(password) < 8 {
-		return errors.New("password character should be grater than or equal 8")
-	}
-	return nil
 }
