@@ -16,6 +16,6 @@ func routes() {
 	app.PATCH("/users", handlers.UpdateUser)
 	app.POST("/users/login/", handlers.Login)
 	app.DELETE("/users/:user_id", handlers.DeleteUser)
-	app.POST("/users/reset-password", handlers.ForgetPassword)
-	app.GET("/users/reset/:token", handlers.ResetPassword)
+	app.POST("/users/forget-password", handlers.ForgetPassword)
+	app.GET("/users/reset", handlers.ResetPassword)
 }

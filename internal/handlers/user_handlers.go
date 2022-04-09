@@ -143,6 +143,7 @@ func DeleteUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, "user deleted")
 }
 
+// TODO implement this func
 func UpdateUser(c echo.Context) error {
 	return c.JSON(http.StatusNotImplemented, "implement me!")
 }
@@ -192,7 +193,7 @@ func ForgetPassword(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 	}
 	uniqueStr := CreateUniqueLink(20)
-	link := domain + uniqueStr
+	link := domain + "users/reset?token=" + uniqueStr
 
 	setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
 	if setLinkErr != nil {
@@ -211,5 +212,23 @@ func ForgetPassword(c echo.Context) error {
 }
 
 func ResetPassword(c echo.Context) error {
-	return c.JSON(http.StatusNotImplemented, "implement me!!")
+	token := c.QueryParam("token")
+	userId, err := drivers.Client.Get(token).Result()
+	if err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("invalid token param"))
+	}
+
+	newPass := CreateUniqueLink(9)
+	if err := drivers.DB.Model(&user.User{}).Where("id = ?", userId).Update("password", utils.GetMD5(newPass)).Error; err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
+	}
+	// delete token before show the response
+	pipe := drivers.Client.Pipeline()
+	pipe.Del(token)
+	pipe.Exec()
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"message":      "OK this is your new password you can change it in your profile",
+		"new_password": newPass,
+	})
 }
