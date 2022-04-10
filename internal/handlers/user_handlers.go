@@ -145,6 +145,7 @@ func DeleteUser(c echo.Context) error {
 
 // TODO implement this func
 func UpdateUser(c echo.Context) error {
+
 	userId, idErr := getUserId(c.Param("user_id"))
 	if idErr != nil {
 		return c.JSON(idErr.Status, idErr)
@@ -240,18 +241,34 @@ func ForgetPassword(c echo.Context) error {
 
 	setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
 	if setLinkErr != nil {
-		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send email please try later"))
+		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send token please try later"))
 	}
-	e := auth.Email{
-		To:      []string{*u.Email},
-		Message: []byte(message + link),
+
+	via := c.Request().Header.Get("via")
+	if via == "" {
+		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("you should pass via key header"))
+	} else if via == "email" {
+		e := auth.Email{
+			To:      []string{*u.Email},
+			Message: []byte(message + link),
+		}
+		go SendEmail(e)
+		err := <-restErr
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send email please try latar"))
+		}
+		return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
+	} else if via == "sms" {
+		if *u.Phonenumber == "" {
+			return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("you don't have phonenumber in your profile, try to reset your password via email"))
+		}
+		if err := utils.SendSms(message+link, *u.Phonenumber); err != nil {
+			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send sms, plaese try later"))
+		}
+
+		return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 	}
-	go SendEmail(e)
-	err := <-restErr
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send email please try latar"))
-	}
-	return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
+	return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid value in via key header"))
 }
 
 func ResetPassword(c echo.Context) error {
