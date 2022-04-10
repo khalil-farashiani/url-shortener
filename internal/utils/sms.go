@@ -1,9 +1,10 @@
+package utils
+
 import (
 	"bytes"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/khalil-farashiani/KiaService/src/errors"
 	"net/http"
 )
 
@@ -18,8 +19,8 @@ const (
 )
 
 var (
-	userPassTrez = utils.GetEnv("TREZ_PASS", "user:password")
-	phoneNumber  = utils.GetEnv("TREZ_PHONENUMBER", "123456")
+	userPassTrez = GetEnv("TREZ_PASS", "user:password")
+	phoneNumber  = GetEnv("TREZ_PHONENUMBER", "123456")
 )
 
 func createHeaderForTrez() string {
@@ -27,15 +28,15 @@ func createHeaderForTrez() string {
 	return "Basic " + result
 }
 
-func marshallSms(obj interface{}) ([]byte, *errors.RestErr) {
+func marshallSms(obj interface{}) ([]byte, *RestErr) {
 	result, err := json.Marshal(obj)
 	if err != nil {
-		return nil, errors.NewInternalServerError("error while marshal a sms struct to json object")
+		return nil, NewInternalServerError("error while marshal a sms struct to json object")
 	}
 	return result, nil
 }
 
-func SendSms(message string, mobile string) *errors.RestErr {
+func SendSms(message string, mobile string) *RestErr {
 	//This is body of request for trez SMS service
 	body := &struct {
 		PhoneNumber         string   `json:"PhoneNumber"`
@@ -56,7 +57,7 @@ func SendSms(message string, mobile string) *errors.RestErr {
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBodyObj))
 	if err != nil {
-		return errors.NewInternalServerError(err.Error())
+		return NewInternalServerError(err.Error())
 	}
 
 	// Set header for POST request
@@ -76,7 +77,7 @@ func SendSms(message string, mobile string) *errors.RestErr {
 	client := &http.Client{Transport: tr}
 	resp, clientErr := client.Do(req)
 	if clientErr != nil {
-		return errors.NewInternalServerError(clientErr.Error())
+		return NewInternalServerError(clientErr.Error())
 	}
 	defer resp.Body.Close()
 	return nil
