@@ -145,17 +145,50 @@ func DeleteUser(c echo.Context) error {
 
 // TODO implement this func
 func UpdateUser(c echo.Context) error {
+	userId, idErr := getUserId(c.Param("user_id"))
+	if idErr != nil {
+		return c.JSON(idErr.Status, idErr)
+	}
+
 	u := user.User{}
+	current := user.User{}
+	current.ID = uint64(userId)
+	u.ID = uint64(userId)
+
+	if err := drivers.DB.First(&current, userId).Error; err != nil {
+		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
+	}
+
 	if err := c.Bind(&u); err != nil {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid json body"))
 	}
-	if err := u.Validate("update"); err != nil {
+
+	isPartial := c.Request().Method == http.MethodPatch
+	fmt.Println(u.Phonenumber)
+
+	if isPartial {
+		if u.Phonenumber != nil {
+			current.Phonenumber = u.Phonenumber
+		}
+		if u.Password != "" {
+			current.Password = utils.GetMD5(u.Password)
+		}
+		if u.Username != "" {
+			current.Username = u.Username
+		}
+
+	} else {
+		current.Phonenumber = u.Phonenumber
+		current.Username = u.Username
+	}
+
+	if err := current.Validate("update"); err != nil {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
 	}
-	if err := drivers.DB.Model(u).Updates(user.User{Password: u.Password, Phonenumber: u.Phonenumber, Username: u.Username}).Error; err != nil {
+	if err := drivers.DB.Model(u).Updates(user.User{Password: current.Password, Phonenumber: current.Phonenumber, Username: current.Username}).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
 	}
-	return c.JSON(http.StatusNotImplemented, "implement me!")
+	return c.JSON(http.StatusOK, current.Marshall())
 }
 
 func Login(c echo.Context) error {
