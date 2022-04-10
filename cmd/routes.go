@@ -12,8 +12,8 @@ func routes() {
 	//user routes
 	app.POST("/users/", handlers.CreateUser)
 	app.GET("/users/:user_id", handlers.GetUser)
-	app.PUT("/users", handlers.UpdateUser)
-	app.PATCH("/users", handlers.UpdateUser)
+	app.PUT("/users/:user_id", handlers.UpdateUser)
+	app.PATCH("/users/:user_id", handlers.UpdateUser)
 	app.POST("/users/login/", handlers.Login)
 	app.DELETE("/users/:user_id", handlers.DeleteUser)
 	app.POST("/users/forget-password", handlers.ForgetPassword)
