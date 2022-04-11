@@ -221,37 +221,46 @@ func Login(c echo.Context) error {
 	return nil
 }
 
+// ForgetPassword send a new password user via sms or email
 func ForgetPassword(c echo.Context) error {
+	// Set a expire time for redis to expire token key
 	duration := time.Now().Add(time.Minute * 15).Unix()
 	linkEx := time.Unix(duration, 0)
 	now := time.Now()
+
+	// create a new link unique token
+	uniqueStr := CreateUniqueLink(20)
+	link := domain + "users/reset?token=" + uniqueStr
 
 	u := &user.User{}
 	if err := c.Bind(u); err != nil {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid json body"))
 	}
-	if u.Email == nil {
-		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("email is requierd field"))
-	}
-	if err := drivers.DB.Where("email = ?", *u.Email).First(&u).Error; err != nil {
-		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
-	}
-	uniqueStr := CreateUniqueLink(20)
-	link := domain + "users/reset?token=" + uniqueStr
 
-	setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
-	if setLinkErr != nil {
-		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send token please try later"))
-	}
-
+	// get "via" key in header request to define the method for send new password
 	via := c.Request().Header.Get("via")
 	if via == "" {
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("you should pass via key header"))
 	} else if via == "email" {
+		if u.Email == nil {
+			return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("email is requierd field"))
+		}
+		// send new password via email
+		// set a new key value in redis client
+		setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
+		if setLinkErr != nil {
+			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send token please try later"))
+		}
+
+		// get user with email
+		if err := drivers.DB.Where("email = ?", *u.Email).First(&u).Error; err != nil {
+			return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
+		}
 		e := auth.Email{
 			To:      []string{*u.Email},
 			Message: []byte(message + link),
 		}
+		//send email
 		go SendEmail(e)
 		err := <-restErr
 		if err != nil {
@@ -259,13 +268,22 @@ func ForgetPassword(c echo.Context) error {
 		}
 		return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 	} else if via == "sms" {
-		if *u.Phonenumber == "" {
-			return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("you don't have phonenumber in your profile, try to reset your password via email"))
+		// Send password via sms
+		if u.Phonenumber == nil {
+			return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("phonenumber is requierd field"))
+		}
+		setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
+		if setLinkErr != nil {
+			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send token please try later"))
+		}
+
+		// get user with phonenumber
+		if err := drivers.DB.Where("phonenumber = ?", u.Phonenumber).First(&u).Error; err != nil {
+			return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 		}
 		if err := utils.SendSms(message+link, *u.Phonenumber); err != nil {
 			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send sms, plaese try later"))
 		}
-
 		return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 	}
 	return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid value in via key header"))
