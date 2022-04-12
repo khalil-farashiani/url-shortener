@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/echo/v4 v4.7.2
+	github.com/sinabakh/go-zarinpal-checkout v0.0.0-20171230121056-f6518b3fddc3 // indirect
 	github.com/twinj/uuid v1.0.0 // indirect
 	go.opentelemetry.io/otel v0.16.0 // indirect
 	gorm.io/driver/mysql v1.3.2 // indirect
