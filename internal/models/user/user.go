@@ -11,10 +11,11 @@ type User struct {
 	gorm.Model
 	ID          uint64  `json:"id" gorm:"primaryKey"`
 	Username    string  `json:"username" gorm:"unique"`
-	Email       *string `json:"email"`
+	Email       *string `json:"email" gorm:"unique"`
 	Password    string  `json:"password"`
 	Avatar      *string `json:"avatar"`
-	Phonenumber *string `json:"phone_number"`
+	Phonenumber *string `json:"phone_number" gorm:"unique"`
+	IsSpecial   bool    `json:"is_special"`
 }
 
 func (u *User) Validate(action string) error {
