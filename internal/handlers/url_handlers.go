@@ -41,7 +41,6 @@ func CreateUrl(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 	url.Source = source
-	url.ShortUrl = domain + CreateUniqueLink(7)
 	user := &user.User{}
 
 	if err := drivers.DB.First(&user, userId).Error; err != nil {
@@ -49,6 +48,11 @@ func CreateUrl(c echo.Context) error {
 	}
 	url.User = *user
 	url.UserID = userId
+	if user.IsSpecial == false {
+		url.ShortUrl = domain + CreateUniqueLink(7)
+	} else {
+		url.ShortUrl = domain + CreateUniqueLink(5)
+	}
 
 	updateErr := drivers.DB.Create(url).Error
 	if updateErr != nil {
