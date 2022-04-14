@@ -13,6 +13,7 @@ import (
 	"github.com/khalil-farashiani/url-shortener/internal/models/auth"
 	"github.com/khalil-farashiani/url-shortener/internal/models/user"
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
+	"github.com/khalil-farashiani/url-shortener/logger"
 	"github.com/labstack/echo/v4"
 )
 
@@ -120,6 +121,7 @@ func GetUser(c echo.Context) error {
 	user := &user.User{}
 
 	if err := drivers.DB.First(&user, userId).Error; err != nil {
+		logger.Logger.Info("user not found")
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
 	}
 
@@ -309,4 +311,26 @@ func ResetPassword(c echo.Context) error {
 		"message":      "OK this is your new password you can change it in your profile",
 		"new_password": newPass,
 	})
+}
+
+func EnableSpecialUser(c echo.Context) error {
+
+	tokenAuth, err := extractTokenMetadata(c.Request())
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+
+	userId, err := FetchAuth(tokenAuth)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+	user := user.User{ID: userId}
+	drivers.DB.Model(&user).Update("is_special", true)
+	drivers.DB.First(&user)
+	// call zarinpall method to get the response
+	// if response show not successful
+	// return utils.NewBadRequest("payment is not successful")
+	//else
+
+	return c.JSON(http.StatusOK, user.Marshall())
 }
