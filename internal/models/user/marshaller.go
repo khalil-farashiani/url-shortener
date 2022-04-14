@@ -5,10 +5,11 @@ import (
 )
 
 type MarshallUser struct {
-	Id       int64   `json:"id"`
-	Username string  `json:"username"`
-	Email    *string `json:"email"`
-	Avatar   *string `json:"avatar"`
+	Id        int64   `json:"id"`
+	Username  string  `json:"username"`
+	Email     *string `json:"email"`
+	Avatar    *string `json:"avatar"`
+	IsSpecial bool    `json:"is_special"`
 }
 
 func (u User) Marshall() MarshallUser {
