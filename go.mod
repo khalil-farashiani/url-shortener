@@ -13,6 +13,9 @@ require (
 	github.com/sinabakh/go-zarinpal-checkout v0.0.0-20171230121056-f6518b3fddc3 // indirect
 	github.com/twinj/uuid v1.0.0 // indirect
 	go.opentelemetry.io/otel v0.16.0 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 	gorm.io/driver/mysql v1.3.2 // indirect
 	gorm.io/driver/sqlite v1.3.1
 	gorm.io/gorm v1.23.3
