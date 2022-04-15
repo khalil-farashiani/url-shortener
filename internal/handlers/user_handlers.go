@@ -136,7 +136,6 @@ func DeleteUser(c echo.Context) error {
 	}
 
 	user := &user.User{}
-
 	if err := drivers.DB.Delete(&user, userId).Error; err != nil {
 		fmt.Println(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
@@ -145,10 +144,20 @@ func DeleteUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, "user deleted")
 }
 
-// TODO implement this func
 func UpdateUser(c echo.Context) error {
+	tokenAuth, err := extractTokenMetadata(c.Request())
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
 
-	userId, idErr := getUserId(c.Param("user_id"))
+	userId, err := FetchAuth(tokenAuth)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
+	}
+	userIdParam, idErr := getUserId(c.Param("user_id"))
+	if uint64(userIdParam) != uint64(userId) {
+		return c.JSON(http.StatusForbidden, utils.NewForbiddenError("You don't have permission to do this action"))
+	}
 	if idErr != nil {
 		return c.JSON(idErr.Status, idErr)
 	}
@@ -167,8 +176,6 @@ func UpdateUser(c echo.Context) error {
 	}
 
 	isPartial := c.Request().Method == http.MethodPatch
-	fmt.Println(u.Phonenumber)
-
 	if isPartial {
 		if u.Phonenumber != nil {
 			current.Phonenumber = u.Phonenumber
