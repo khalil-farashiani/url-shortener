@@ -19,4 +19,5 @@ func routes() {
 	app.POST("/users/forget-password", handlers.ForgetPassword)
 	app.GET("/users/reset", handlers.ResetPassword)
 	app.GET("/users/premium", handlers.EnableSpecialUser)
+	app.POST("/users/logout", handlers.Logout)
 }

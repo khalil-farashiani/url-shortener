@@ -230,6 +230,26 @@ func Login(c echo.Context) error {
 	return nil
 }
 
+func deleteAuth(givenUuid string) (int64, error) {
+	deleted, err := drivers.Client.Del(givenUuid).Result()
+	if err != nil {
+		return 0, err
+	}
+	return deleted, nil
+}
+
+func Logout(c echo.Context) error {
+	au, err := extractTokenMetadata(c.Request())
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, "unauthorized")
+	}
+	deleted, delErr := deleteAuth(au.AccessUuid)
+	if delErr != nil || deleted == 0 {
+		return c.JSON(http.StatusUnauthorized, "unauthorized")
+	}
+	return c.JSON(http.StatusOK, "Successfully logged out")
+}
+
 // ForgetPassword send a new password user via sms or email
 func ForgetPassword(c echo.Context) error {
 	// Set a expire time for redis to expire token key
