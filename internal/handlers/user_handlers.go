@@ -112,6 +112,14 @@ func CreateUser(c echo.Context) error {
 	return c.JSON(http.StatusCreated, user.Marshall())
 }
 
+// HealthCheck godoc
+// @Summary Show the status of server.
+// @Description get the status of server.
+// @Tags root
+// @Accept */*
+// @Produce json
+// @Success 200 {object} map[interface{}]interface{}
+// @Router /users/{id} [get]
 func GetUser(c echo.Context) error {
 	idParam := c.Param("user_id")
 	userId, getErr := getUserId(idParam)

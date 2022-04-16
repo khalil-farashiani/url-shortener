@@ -1,9 +1,15 @@
 package main
 
-import "github.com/khalil-farashiani/url-shortener/internal/handlers"
+import (
+	_ "github.com/khalil-farashiani/url-shortener/api"
+	"github.com/khalil-farashiani/url-shortener/internal/handlers"
+	echoSwagger "github.com/swaggo/echo-swagger"
+)
 
+// Routes
 func routes() {
 	app.GET("/ping", handlers.Ping)
+	app.GET("/swagger/*", echoSwagger.WrapHandler)
 	//url routes
 	app.POST("/urls/", handlers.CreateUrl)
 	app.GET("/:url", handlers.GetUrl)
