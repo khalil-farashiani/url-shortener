@@ -5,6 +5,7 @@ import (
 
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
 	"github.com/labstack/echo/v4"
+	_ "github.com/swaggo/echo-swagger/example/docs"
 )
 
 const (
@@ -13,9 +14,9 @@ const (
 
 var app = echo.New()
 
-// @title Echo Swagger Example API
+// @title Swagger Example API
 // @version 1.0
-// @description This is a sample server server.
+// @description This is a sample server Petstore server.
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
@@ -25,9 +26,8 @@ var app = echo.New()
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8080
-// @BasePath /
-// @schemes http
+// @host petstore.swagger.io
+// @BasePath /v2
 func main() {
 	err := run()
 	if err != nil {
@@ -43,7 +43,6 @@ func run() error {
 	}
 
 	app.Static("/assets", "assets")
-	// app.Use(middleware.JWT([]byte("secret")))
 
 	routes()
 
