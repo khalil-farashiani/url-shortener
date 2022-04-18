@@ -54,14 +54,6 @@ func getUserId(userIdParam string) (int64, *utils.RestErr) {
 	return userId, nil
 }
 
-// url-shortener godoc
-// @Summary Show the status of server.
-// @Description get the status of server.
-// @Tags root
-// @Accept */*
-// @Produce json
-// @Success 200 {object} map[interface{}]interface{}
-// @Router /users/ [POST]
 func CreateUser(c echo.Context) error {
 	// create a user struct
 	var user = &user.User{}

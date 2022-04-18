@@ -16,32 +16,8 @@
         "version": "1.0"
     },
     "host": "petstore.swagger.io",
-    "basePath": "/v2",
+    "basePath": "/api/",
     "paths": {
-        "/users/": {
-            "post": {
-                "description": "get the status of server.",
-                "consumes": [
-                    "*/*"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "root"
-                ],
-                "summary": "Show the status of server.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/users/{id}": {
             "get": {
                 "description": "get string by ID",

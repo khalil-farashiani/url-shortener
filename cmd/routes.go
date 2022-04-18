@@ -5,24 +5,10 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
-// @title Echo Swagger Example API
-// @version 1.0
-// @description This is a sample server server.
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host localhost:8080
-// @BasePath /
-// @schemes http
 func routes() {
+	url := echoSwagger.URL("http://127.0.0.1:8080/swagger/doc.json")
 	app.GET("/ping", handlers.Ping)
-	app.GET("/swagger/*", echoSwagger.WrapHandler)
+	app.GET("/swagger/*", echoSwagger.EchoWrapHandler(url))
 	//url routes
 	app.POST("/urls/", handlers.CreateUrl)
 	app.GET("/:url", handlers.GetUrl)

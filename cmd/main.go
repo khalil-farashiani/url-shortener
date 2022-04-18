@@ -27,7 +27,7 @@ var app = echo.New()
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host petstore.swagger.io
-// @BasePath /v2
+// @BasePath /api/
 func main() {
 	err := run()
 	if err != nil {
