@@ -126,6 +126,14 @@ func extractTokenMetadata(r *http.Request) (*auth.AccessDetails, error) {
 	return nil, err
 }
 
+func deleteAuth(givenUuid string) (int64, error) {
+	deleted, err := drivers.Client.Del(givenUuid).Result()
+	if err != nil {
+		return 0, err
+	}
+	return deleted, nil
+}
+
 func FetchAuth(authD *auth.AccessDetails) (uint64, error) {
 	userid, err := drivers.Client.Get(authD.AccessUuid).Result()
 	if err != nil {
