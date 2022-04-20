@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
+	_ "github.com/khalil-farashiani/url-shortener/api"
 	"github.com/khalil-farashiani/url-shortener/internal/drivers"
 	"github.com/labstack/echo/v4"
-	_ "github.com/swaggo/echo-swagger/example/docs"
 )
 
 const (

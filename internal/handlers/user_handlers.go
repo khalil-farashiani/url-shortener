@@ -15,7 +15,6 @@ import (
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
 	"github.com/khalil-farashiani/url-shortener/logger"
 	"github.com/labstack/echo/v4"
-	_ "github.com/swaggo/echo-swagger/example/docs"
 )
 
 const (
@@ -54,6 +53,20 @@ func getUserId(userIdParam string) (int64, *utils.RestErr) {
 	return userId, nil
 }
 
+// CreateUser godoc
+// @Summary      create an user
+// @Description  create an user via username and password
+// @Tags         users
+// @Param        username  formData      string  true  "username"
+// @Param        password  formData      string  true  "password"
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  user.User{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/ [post]
 func CreateUser(c echo.Context) error {
 	// create a user struct
 	var user = &user.User{}
@@ -120,10 +133,11 @@ func CreateUser(c echo.Context) error {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
-// @Success      200  {object}  map[string]interface{}
-// @Failure      400  {object}  interface{}
-// @Failure      404  {object}  interface{}
-// @Failure      500  {object}  interface{}
+// @Success      200  {object}  user.User{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
 // @Router       /users/{id} [get]
 func GetUser(c echo.Context) error {
 	idParam := c.Param("user_id")
@@ -141,6 +155,18 @@ func GetUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user.Marshall())
 }
 
+// DeleteUser godoc
+// @Summary      delete an user
+// @Description  delete an user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  {string}  string "user successfully deleted"
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/{id} [delete]
 func DeleteUser(c echo.Context) error {
 	idParam := c.Param("user_id")
 	userId, getErr := getUserId(idParam)
@@ -157,6 +183,21 @@ func DeleteUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, "user deleted")
 }
 
+// UpdateUser godoc
+// @Summary      update an user
+// @Description  update an user with PUT or PATCH method
+// @Tags         users
+// @Param        phone_number  formData  string  false  "phone_number"
+// @Param        password  formData  string  false  "password"
+// @Param        email  formData  string  false  "email"
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  user.User{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/{id} [patch]
 func UpdateUser(c echo.Context) error {
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
@@ -214,6 +255,20 @@ func UpdateUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, current.Marshall())
 }
 
+// Login godoc
+// @Summary      login an user
+// @Description  login an user
+// @Tags         users
+// @Param        username  formData      string  true  "username"
+// @Param        password  formData      string  true  "password"
+// @Accept       mpfd
+// @Produce      json
+// @Success      200  {object}  user.User{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/login/ [post]
 func Login(c echo.Context) error {
 	username := c.FormValue("username")
 	password := c.FormValue("password")
@@ -243,14 +298,18 @@ func Login(c echo.Context) error {
 	return nil
 }
 
-func deleteAuth(givenUuid string) (int64, error) {
-	deleted, err := drivers.Client.Del(givenUuid).Result()
-	if err != nil {
-		return 0, err
-	}
-	return deleted, nil
-}
-
+// Logout godoc
+// @Summary      logout an user
+// @Description  logout an user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  string	string "user successfully logout"
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/logout/ [post]
 func Logout(c echo.Context) error {
 	au, err := extractTokenMetadata(c.Request())
 	if err != nil {
@@ -263,7 +322,20 @@ func Logout(c echo.Context) error {
 	return c.JSON(http.StatusOK, "Successfully logged out")
 }
 
-// ForgetPassword send a new password user via sms or email
+// ForgetPassword godoc
+// @Summary      forget password
+// @Description  ForgetPassword send a token via sms or email
+// @Tags         users
+// @Accept       mpfd
+// @Produce      json
+// @Param        phone_number  formData  string  false  "phone_number"
+// @Param        email  formData  string  false  "email"
+// @Success      200  {object}  user.User{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/forget-password/ [post]
 func ForgetPassword(c echo.Context) error {
 	// Set a expire time for redis to expire token key
 	duration := time.Now().Add(time.Minute * 15).Unix()
@@ -331,6 +403,18 @@ func ForgetPassword(c echo.Context) error {
 	return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid value in via key header"))
 }
 
+// ResetPassword godoc
+// @Summary      reset password
+// @Description  ResetPassword validate token that user click on it and send a new password
+// @Tags         users
+// @Accept       mpfd
+// @Produce      json
+// @Success      200  {string}  string "a new password"
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/reset/ [get]
 func ResetPassword(c echo.Context) error {
 	token := c.QueryParam("token")
 	userId, err := drivers.Client.Get(token).Result()
@@ -353,8 +437,19 @@ func ResetPassword(c echo.Context) error {
 	})
 }
 
+// EnableSpecialUser godoc
+// @Summary      enable premium
+// @Description  EnableSpecialUser enable some features for users like create shorter link
+// @Tags         users
+// @Accept       mpfd
+// @Produce      json
+// @Success      200  {object}  user.User{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /users/premium/ [get]
 func EnableSpecialUser(c echo.Context) error {
-
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
