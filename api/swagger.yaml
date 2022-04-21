@@ -8,6 +8,25 @@ definitions:
         description: Valid is true if Time is not NULL
         type: boolean
     type: object
+  url.Url:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      short_url:
+        type: string
+      source:
+        type: string
+      updatedAt:
+        type: string
+      user:
+        $ref: '#/definitions/user.User'
+      user_id:
+        type: integer
+    type: object
   user.User:
     properties:
       avatar:
@@ -54,6 +73,143 @@ info:
   title: Swagger Example API
   version: "1.0"
 paths:
+  /urls/:
+    post:
+      consumes:
+      - application/json
+      description: CreateUrl create a short url
+      parameters:
+      - description: source
+        in: formData
+        name: source
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/url.Url'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+      summary: create an short url
+      tags:
+      - urls
+  /urls/{url}:
+    delete:
+      consumes:
+      - application/json
+      description: delete an url with
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/url.Url'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+      summary: delete an url
+      tags:
+      - urls
+    get:
+      consumes:
+      - application/json
+      description: GetUrl get the main url to redirect
+      parameters:
+      - description: url
+        in: path
+        name: url
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/url.Url'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+      summary: get url
+      tags:
+      - urls
+  /urls/my-links:
+    get:
+      consumes:
+      - application/json
+      description: MyUrls return a list of user's urls
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/url.Url'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.RestErr'
+      summary: show list of urls
+      tags:
+      - urls
   /users/:
     post:
       consumes:

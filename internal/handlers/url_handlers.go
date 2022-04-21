@@ -28,6 +28,19 @@ func CreateUniqueLink(length int) string {
 	return fmt.Sprintf("%x", b)[:length]
 }
 
+// CreateUrl godoc
+// @Summary      create an short url
+// @Description  CreateUrl create a short url
+// @Tags         urls
+// @Param        source  formData  string  true  "source"
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  url.Url{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /urls/ [post]
 func CreateUrl(c echo.Context) error {
 	url := &url.Url{}
 	source := c.FormValue("source")
@@ -61,6 +74,19 @@ func CreateUrl(c echo.Context) error {
 	return c.JSON(http.StatusCreated, url.Marshall())
 }
 
+// GetUrl godoc
+// @Summary      get url
+// @Description  GetUrl get the main url to redirect
+// @Tags         urls
+// @Param        url  path  string true  "url"
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  url.Url{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /urls/{url} [get]
 func GetUrl(c echo.Context) error {
 	url := &url.Url{}
 	urlParam := c.Param("url")
@@ -70,6 +96,18 @@ func GetUrl(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"result": url.Source})
 }
 
+// DeleteUrl godoc
+// @Summary      delete an url
+// @Description  delete an url with
+// @Tags         urls
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  url.Url{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /urls/{url} [delete]
 func DeleteUrl(c echo.Context) error {
 	urlParam := c.Param("url")
 	tokenAuth, err := extractTokenMetadata(c.Request())
@@ -88,6 +126,18 @@ func DeleteUrl(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }
 
+// Myurls godoc
+// @Summary      show list of urls
+// @Description  MyUrls return a list of user's urls
+// @Tags         urls
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}  url.Url{}
+// @Failure      400  {object}  utils.RestErr{}
+// @Failure      401  {object}  utils.RestErr{}
+// @Failure      404  {object}  utils.RestErr{}
+// @Failure      500  {object}  utils.RestErr{}
+// @Router       /urls/my-links [get]
 func MyUrls(c echo.Context) error {
 	urls := &url.Urls{}
 	tokenAuth, err := extractTokenMetadata(c.Request())
