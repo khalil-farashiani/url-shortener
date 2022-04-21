@@ -10,6 +10,7 @@ import (
 	"github.com/khalil-farashiani/url-shortener/internal/models/url"
 	"github.com/khalil-farashiani/url-shortener/internal/models/user"
 	"github.com/khalil-farashiani/url-shortener/internal/utils"
+	"github.com/khalil-farashiani/url-shortener/logger"
 	"github.com/labstack/echo/v4"
 )
 
@@ -46,17 +47,20 @@ func CreateUrl(c echo.Context) error {
 	source := c.FormValue("source")
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 	url.Source = source
 	user := &user.User{}
 
 	if err := drivers.DB.First(&user, userId).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 	}
 	url.User = *user
@@ -69,8 +73,10 @@ func CreateUrl(c echo.Context) error {
 
 	updateErr := drivers.DB.Create(url).Error
 	if updateErr != nil {
+		logger.Logger.Info(updateErr.Error())
 		return c.JSON(http.StatusNotFound, utils.NewInternalServerError("have an issue in create shortlink"))
 	}
+	logger.Logger.Info("new short url was created")
 	return c.JSON(http.StatusCreated, url.Marshall())
 }
 
@@ -91,6 +97,7 @@ func GetUrl(c echo.Context) error {
 	url := &url.Url{}
 	urlParam := c.Param("url")
 	if err := drivers.DB.First(&url, "short_url = ?", domain+urlParam).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("url not found"))
 	}
 	return c.JSON(http.StatusOK, map[string]string{"result": url.Source})
@@ -112,17 +119,21 @@ func DeleteUrl(c echo.Context) error {
 	urlParam := c.Param("url")
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	if err := drivers.DB.Where(map[string]interface{}{"short_url": domain + urlParam, "user_id": userId}).Delete(&url.Url{}).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("url not found"))
 	}
+	logger.Logger.Info("an url was deleted")
 	return c.JSON(http.StatusOK, map[string]string{"message": "deleted"})
 }
 
@@ -142,15 +153,18 @@ func MyUrls(c echo.Context) error {
 	urls := &url.Urls{}
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	if err := drivers.DB.Where(&url.Url{UserID: uint64(userId)}).Find(urls).Error; err != nil {
+		logger.Logger.Error(err.Error())
 		return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to return the urls"))
 	}
 	return c.JSON(http.StatusOK, urls.Marshall())
