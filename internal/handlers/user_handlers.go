@@ -148,7 +148,7 @@ func GetUser(c echo.Context) error {
 	user := &user.User{}
 
 	if err := drivers.DB.First(&user, userId).Error; err != nil {
-		logger.Logger.Info("user not found")
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
 	}
 
@@ -176,7 +176,7 @@ func DeleteUser(c echo.Context) error {
 
 	user := &user.User{}
 	if err := drivers.DB.Delete(&user, userId).Error; err != nil {
-		fmt.Println(err.Error())
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
 	}
 
@@ -201,18 +201,22 @@ func DeleteUser(c echo.Context) error {
 func UpdateUser(c echo.Context) error {
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 	userIdParam, idErr := getUserId(c.Param("user_id"))
 	if uint64(userIdParam) != uint64(userId) {
+		logger.Logger.Info(`user ` + strconv.Itoa(int(userIdParam)) + `try to access an endpoint that doesn't have permission`)
 		return c.JSON(http.StatusForbidden, utils.NewForbiddenError("You don't have permission to do this action"))
 	}
 	if idErr != nil {
+		logger.Logger.Info(idErr.Message)
 		return c.JSON(idErr.Status, idErr)
 	}
 
@@ -222,10 +226,12 @@ func UpdateUser(c echo.Context) error {
 	u.ID = uint64(userId)
 
 	if err := drivers.DB.First(&current, userId).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewBadRequestError("user not found"))
 	}
 
 	if err := c.Bind(&u); err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid json body"))
 	}
 
@@ -247,11 +253,14 @@ func UpdateUser(c echo.Context) error {
 	}
 
 	if err := current.Validate("update"); err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
 	}
 	if err := drivers.DB.Model(u).Updates(user.User{Password: current.Password, Phonenumber: current.Phonenumber, Username: current.Username}).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError(err.Error()))
 	}
+	logger.Logger.Info(`user with id` + strconv.Itoa(int(userId)) + `updated`)
 	return c.JSON(http.StatusOK, current.Marshall())
 }
 
@@ -275,17 +284,21 @@ func Login(c echo.Context) error {
 
 	user := &user.User{}
 	if err := drivers.DB.First(&user, "username = ?", username).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("Please provide valid login details"))
 	}
 	if utils.GetMD5(password) != user.Password {
+		logger.Logger.Info("unsuccessful login")
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("Please provide valid login details"))
 	}
 	ts, err := createToken(user.ID)
 	if err != nil {
+		logger.Logger.Warn(err.Error())
 		return c.JSON(http.StatusUnprocessableEntity, err.Error())
 	}
 	saveErr := createAuth(user.ID, ts)
 	if saveErr != nil {
+		logger.Logger.Warn(err.Error())
 		c.JSON(http.StatusUnprocessableEntity, saveErr.Error())
 	}
 
@@ -293,7 +306,7 @@ func Login(c echo.Context) error {
 		"access_token":  ts.AccessToken,
 		"refresh_token": ts.RefreshToken,
 	}
-
+	logger.Logger.Info("successfully login")
 	c.JSON(http.StatusOK, tokens)
 	return nil
 }
@@ -313,12 +326,15 @@ func Login(c echo.Context) error {
 func Logout(c echo.Context) error {
 	au, err := extractTokenMetadata(c.Request())
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, "unauthorized")
 	}
 	deleted, delErr := deleteAuth(au.AccessUuid)
 	if delErr != nil || deleted == 0 {
+		logger.Logger.Info(delErr.Error())
 		return c.JSON(http.StatusUnauthorized, "unauthorized")
 	}
+	logger.Logger.Info("Successfully logged out")
 	return c.JSON(http.StatusOK, "Successfully logged out")
 }
 
@@ -348,26 +364,31 @@ func ForgetPassword(c echo.Context) error {
 
 	u := &user.User{}
 	if err := c.Bind(u); err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid json body"))
 	}
 
 	// get "via" key in header request to define the method for send new password
 	via := c.Request().Header.Get("via")
 	if via == "" {
+		logger.Logger.Info("unsuccessfully request for forget password")
 		return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("you should pass via key header"))
 	} else if via == "email" {
 		if u.Email == nil {
+			logger.Logger.Info("unsuccessfully request for forget password")
 			return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("email is requierd field"))
 		}
 		// send new password via email
 		// set a new key value in redis client
 		setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
 		if setLinkErr != nil {
+			logger.Logger.Error(setLinkErr.Error())
 			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send token please try later"))
 		}
 
 		// get user with email
 		if err := drivers.DB.Where("email = ?", *u.Email).First(&u).Error; err != nil {
+			logger.Logger.Info(err.Error())
 			return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 		}
 		e := auth.Email{
@@ -378,26 +399,33 @@ func ForgetPassword(c echo.Context) error {
 		go SendEmail(e)
 		err := <-restErr
 		if err != nil {
+			logger.Logger.Error(err.Error())
 			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send email please try latar"))
 		}
+		logger.Logger.Info(`an email was sent for forget password to user`)
 		return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 	} else if via == "sms" {
 		// Send password via sms
 		if u.Phonenumber == nil {
+			logger.Logger.Info("unsuccessfully request for forget password")
 			return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("phonenumber is requierd field"))
 		}
 		setLinkErr := drivers.Client.Set(uniqueStr, strconv.Itoa(int(u.ID)), linkEx.Sub(now)).Err()
 		if setLinkErr != nil {
+			logger.Logger.Error(setLinkErr.Error())
 			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("we have problem to send token please try later"))
 		}
 
 		// get user with phonenumber
 		if err := drivers.DB.Where("phonenumber = ?", u.Phonenumber).First(&u).Error; err != nil {
+			logger.Logger.Info(err.Error())
 			return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 		}
 		if err := utils.SendSms(message+link, *u.Phonenumber); err != nil {
+			logger.Logger.Error(err.Error)
 			return c.JSON(http.StatusInternalServerError, utils.NewInternalServerError("unable to send sms, plaese try later"))
 		}
+		logger.Logger.Info("an SMS was sent for forget password to user")
 		return c.JSON(http.StatusOK, map[string]string{"message": "OK"})
 	}
 	return c.JSON(http.StatusBadRequest, utils.NewBadRequestError("invalid value in via key header"))
@@ -409,7 +437,7 @@ func ForgetPassword(c echo.Context) error {
 // @Tags         users
 // @Accept       mpfd
 // @Produce      json
-// @Success      200  {string}  string "a new password"
+// @Success      200  {string}  string "a new password created"
 // @Failure      400  {object}  utils.RestErr{}
 // @Failure      401  {object}  utils.RestErr{}
 // @Failure      404  {object}  utils.RestErr{}
@@ -419,11 +447,13 @@ func ResetPassword(c echo.Context) error {
 	token := c.QueryParam("token")
 	userId, err := drivers.Client.Get(token).Result()
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("invalid token param"))
 	}
 
 	newPass := CreateUniqueLink(9)
 	if err := drivers.DB.Model(&user.User{}).Where("id = ?", userId).Update("password", utils.GetMD5(newPass)).Error; err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusNotFound, utils.NewNotFoundError("user not found"))
 	}
 	// delete token before show the response
@@ -452,11 +482,13 @@ func ResetPassword(c echo.Context) error {
 func EnableSpecialUser(c echo.Context) error {
 	tokenAuth, err := extractTokenMetadata(c.Request())
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 
 	userId, err := FetchAuth(tokenAuth)
 	if err != nil {
+		logger.Logger.Info(err.Error())
 		return c.JSON(http.StatusUnauthorized, utils.NewUnauthorizedError("unauthorized"))
 	}
 	user := user.User{ID: userId}
@@ -466,6 +498,6 @@ func EnableSpecialUser(c echo.Context) error {
 	// if response show not successful
 	// return utils.NewBadRequest("payment is not successful")
 	//else
-
+	logger.Logger.Info("an user successfully enable premium plan")
 	return c.JSON(http.StatusOK, user.Marshall())
 }
