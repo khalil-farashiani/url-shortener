@@ -27,7 +27,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	cfg.EncoderConfig.EncodeTime = zapcore.EpochTimeEncoder
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	if err := json.Unmarshal([]byte(reader), &cfg); err != nil {
 		panic(err)
 	}
